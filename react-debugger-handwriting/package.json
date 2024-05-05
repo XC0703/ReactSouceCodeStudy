@@ -1,0 +1,14 @@
+{
+  "name": "react-debugger-handwriting",
+  "version": "1.0.0",
+  "type": "module",
+  "license": "ISC",
+  "description": "本项目是 React 源码调试过程中跟着源码核心逻辑手写的代码",
+  "scripts": {
+    "dev": "vite"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.2.11"
+  }
+}

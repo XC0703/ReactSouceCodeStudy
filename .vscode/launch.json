@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "configurations": [
+    {
+      "type": "msedge",
+      "request": "launch",
+      "name": "针对 localhost 启动 Edge",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/react-debugger"
+    }
+  ]
+}

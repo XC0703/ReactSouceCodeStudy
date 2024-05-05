@@ -1,0 +1,14 @@
+{
+  "name": "react-debugger",
+  "version": "1.0.0",
+  "type": "module",
+  "license": "ISC",
+  "description": "本项目是一个 React 调试器，用于调试 React 的源码",
+  "scripts": {
+    "dev": "vite"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.2.11"
+  }
+}
