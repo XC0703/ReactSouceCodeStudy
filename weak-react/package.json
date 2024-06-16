@@ -1,0 +1,21 @@
+{
+  "private": true,
+  "type": "module",
+  "name": "weak-react",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint --ext .ts,.jsx,.tsx --fix --quiet ./packages"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.13.0",
+    "@typescript-eslint/parser": "^7.13.0",
+    "eslint": "8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "prettier": "^3.3.2",
+    "rollup": "^4.18.0",
+    "typescript": "^5.4.5"
+  }
+}
