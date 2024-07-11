@@ -13,3 +13,13 @@ export const appendInitialChild = (...args: any) => {
 export const createTextInstance = (...args: any) => {
 	return {} as any;
 };
+
+export const appendChildToContainer = (child: any, parent: Container) => {
+	const prevParentID = child.parent;
+
+	if (prevParentID !== -1 && prevParentID !== parent.rootID) {
+		throw new Error('不能重复挂载child');
+	}
+	child.parent = parent.rootID;
+	parent.children.push(child);
+};
