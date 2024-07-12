@@ -16,7 +16,7 @@ export default defineConfig({
 				replacement: resolvePkgPath('react')
 			},
 			{
-				find: 'react-dom',
+				find: 'react-dom/client',
 				replacement: resolvePkgPath('react-dom')
 			},
 			{

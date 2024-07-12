@@ -7,10 +7,11 @@
   "license": "MIT",
   "scripts": {
     "lint": "eslint --ext .ts,.jsx,.tsx --fix --quiet ./packages",
-    "build-dev": "rimraf dist && rollup --config scripts/rollup/react.config.js --bundleConfigAsCjs",
+    "build-dev": "rimraf dist && rollup --config scripts/rollup/dev.config.js --bundleConfigAsCjs",
     "demo": "vite serve demos/test-1 --config scripts/vite/vite.config.js --force"
   },
   "devDependencies": {
+    "@rollup/plugin-alias": "^5.1.0",
     "@rollup/plugin-commonjs": "^26.0.1",
     "@rollup/plugin-replace": "^5.0.7",
     "@types/react": "^18.3.3",
