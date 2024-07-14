@@ -1,8 +1,14 @@
 import { ReactElementType } from 'shared/ReactTypes';
 import { FiberNode } from './fiber';
 import { UpdateQueue, processUpdateQueue } from './updateQueue';
-import { HostComponent, HostRoot, HostText } from './workTags';
+import {
+	HostComponent,
+	HostRoot,
+	HostText,
+	FunctionComponent
+} from './workTags';
 import { reconcileChildFibers, mountChildFibers } from './childFiber';
+import { renderWithHooks } from './fiberHooks';
 
 // 比较并返回子 FiberNode
 export const beginWork = (workInProgress: FiberNode) => {
@@ -13,6 +19,9 @@ export const beginWork = (workInProgress: FiberNode) => {
 		// 表示原生 DOM 元素
 		case HostComponent:
 			return updateHostComponent(workInProgress);
+		// 表示函数组件
+		case FunctionComponent:
+			return updateFunctionComponent(workInProgress);
 		// 表示文本节点
 		case HostText:
 			return updateHostText();
@@ -48,6 +57,12 @@ function updateHostRoot(workInProgress: FiberNode) {
 function updateHostComponent(workInProgress: FiberNode) {
 	const nextProps = workInProgress.pendingProps;
 	const nextChildren = nextProps.children;
+	reconcileChildren(workInProgress, nextChildren);
+	return workInProgress.child;
+}
+
+function updateFunctionComponent(workInProgress: FiberNode) {
+	const nextChildren = renderWithHooks(workInProgress);
 	reconcileChildren(workInProgress, nextChildren);
 	return workInProgress.child;
 }
