@@ -11,7 +11,7 @@ import {
 	HostRoot,
 	HostText
 } from './workTags';
-import { NoFlags } from './fiberFlags';
+import { NoFlags, Update } from './fiberFlags';
 
 // 生成更新计划，计算和收集更新 flags
 export const completeWork = (workInProgress: FiberNode) => {
@@ -25,7 +25,8 @@ export const completeWork = (workInProgress: FiberNode) => {
 
 		case HostComponent:
 			if (current !== null && workInProgress.stateNode !== null) {
-				// TODO: 组件的更新阶段
+				// 组件的更新阶段
+				updateHostComponent(current, workInProgress);
 			} else {
 				// 首屏渲染阶段
 				// 构建 DOM
@@ -40,7 +41,8 @@ export const completeWork = (workInProgress: FiberNode) => {
 
 		case HostText:
 			if (current !== null && workInProgress.stateNode !== null) {
-				// TODO: 组件的更新阶段
+				// 组件的更新阶段
+				updateHostText(current, workInProgress);
 			} else {
 				// 首屏渲染阶段
 				// 构建 DOM
@@ -101,4 +103,21 @@ function bubbleProperties(workInProgress: FiberNode) {
 	}
 
 	workInProgress.subtreeFlags |= subtreeFlags;
+}
+
+function updateHostText(current: FiberNode, workInProgress: FiberNode) {
+	const oldText = current.memoizedProps.content;
+	const newText = workInProgress.pendingProps.content;
+	if (oldText !== newText) {
+		markUpdate(workInProgress);
+	}
+}
+
+function updateHostComponent(current: FiberNode, workInProgress: FiberNode) {
+	markUpdate(workInProgress);
+}
+
+// 为 Fiber 节点增加 Update flags
+function markUpdate(workInProgress: FiberNode) {
+	workInProgress.flags |= Update;
 }

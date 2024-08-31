@@ -5,7 +5,8 @@ import {
 	UpdateQueue,
 	createUpdate,
 	createUpdateQueue,
-	enqueueUpdate
+	enqueueUpdate,
+	processUpdateQueue
 } from './updateQueue';
 import { Action } from 'shared/ReactTypes';
 import { scheduleUpdateOnFiber } from './workLoop';
@@ -14,6 +15,7 @@ import { scheduleUpdateOnFiber } from './workLoop';
 let currentlyRenderingFiber: FiberNode | null = null;
 // Hooks 链表中当前正在处理的 Hook
 let workInProgressHook: Hook | null = null;
+let currentHook: Hook | null = null;
 // 当前使用的 Hooks 指针，根据初始渲染/更新渲染阶段不同进行赋值
 const { currentDispatcher } = internals;
 
@@ -133,7 +135,70 @@ function dispatchSetState<State>(
 	scheduleUpdateOnFiber(fiber);
 }
 
-function updateState<T>(initialState: T | (() => T)): [T, Dispatch<T>] {
-	// TODO
-	throw new Error('Function not implemented.');
+// update 时的 useState
+function updateState<State>(): [State, Dispatch<State>] {
+	if (__DEV__) {
+		console.log('updateState 开始');
+	}
+	// 当前正在工作的 useState
+	const hook = updateWorkInProgressHook();
+
+	// 计算新 state 的逻辑
+	const queue = hook.queue as UpdateQueue<State>;
+	const pending = queue.shared.pending;
+
+	if (pending !== null) {
+		const { memoizedState } = processUpdateQueue(hook.memoizedState, pending);
+		hook.memoizedState = memoizedState;
+	}
+	return [hook.memoizedState, queue.dispatch as Dispatch<State>];
+}
+
+// 更新当前正在工作的 Hook
+function updateWorkInProgressHook(): Hook {
+	// render 阶段触发的更新
+	// 保存链表中的下一个 Hook
+	let nextCurrentHook: Hook | null;
+	if (currentHook === null) {
+		// 这是函数组件 update 时的第一个 hook
+		const current = (currentlyRenderingFiber as FiberNode).alternate;
+		if (current === null) {
+			nextCurrentHook = null;
+		} else {
+			nextCurrentHook = current.memoizedState;
+		}
+	} else {
+		// 这是函数组件 update 时后续的 hook
+		nextCurrentHook = currentHook.next;
+	}
+
+	if (nextCurrentHook === null) {
+		throw new Error(
+			`组件 ${currentlyRenderingFiber?.type} 本次执行时的 Hooks 比上次执行多`
+		);
+	}
+
+	currentHook = nextCurrentHook as Hook;
+	const newHook: Hook = {
+		memoizedState: currentHook.memoizedState,
+		queue: currentHook.queue,
+		next: null
+	};
+	if (workInProgressHook === null) {
+		// update 时的第一个hook
+		if (currentlyRenderingFiber !== null) {
+			workInProgressHook = newHook;
+			currentlyRenderingFiber.memoizedState = workInProgressHook;
+		} else {
+			// currentlyRenderingFiber === null 代表 Hook 执行的上下文不是一个函数组件
+			throw new Error('Hooks 只能在函数组件中执行');
+		}
+	} else {
+		// update 时的其他 hook
+		// 将当前处理的 Hook.next 指向新建的 hook，形成 Hooks 链表
+		workInProgressHook.next = newHook;
+		// 更新当前处理的 Hook
+		workInProgressHook = newHook;
+	}
+	return workInProgressHook;
 }

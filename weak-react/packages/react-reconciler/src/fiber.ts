@@ -2,6 +2,7 @@ import { Props, Key, Ref, ReactElementType } from 'shared/ReactTypes';
 import { FunctionComponent, HostComponent, WorkTag } from './workTags';
 import { NoFlags, Flags } from './fiberFlags';
 import { Container } from 'hostConfig';
+import { Hook } from './fiberHooks';
 
 export class FiberNode {
 	tag: WorkTag;
@@ -18,6 +19,7 @@ export class FiberNode {
 	memoizedState: any;
 	alternate: FiberNode | null;
 	flags: Flags;
+	deletions: Array<FiberNode> | null;
 	subtreeFlags: Flags;
 	updateQueue: unknown;
 
@@ -44,6 +46,7 @@ export class FiberNode {
 		this.flags = NoFlags; // 表示节点的副作用类型，如更新、插入、删除等
 		this.subtreeFlags = NoFlags; // 表示子节点的副作用类型，如更新、插入、删除等
 		this.updateQueue = null; // 更新计划队列
+		this.deletions = null; // 指向待删除的子节点，用于在协调过程中进行删除
 	}
 }
 

@@ -7,7 +7,7 @@
 - **只能在函数组件中调用 Hooks**：Hooks 依赖于 React 的函数组件机制，所以只能在函数组件中使用，而不能在类组件中使用。如果你需要在类组件中使用类似的功能，可以考虑使用 React 的类组件生命周期方法和状态管理机制。
 - **只能在顶层调用 Hooks**：不可以在条件语句、循环语句或嵌套函数中调用 Hooks。这确保 React 能够按照相同的顺序调用 Hooks，以确保状态之间的关系保持一致。
 
-先在 `beginWork` 函数中增加 `FunctionComponent` 的情况判断，若 `FiberNode` 是函数组件，就调用 `updateFunctionComponent` 函数；
+先在 `beginWork` 函数中增加 `FunctionComponent` 的情况判断，若 `FiberNode` 是函数组件，就调用 `updateFunctionComponent` 函数：
 
 ```ts
 // weak-react\packages\react-reconciler\src\beginWork.ts
