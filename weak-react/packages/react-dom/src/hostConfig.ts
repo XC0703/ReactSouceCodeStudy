@@ -60,3 +60,11 @@ export const removeChild = (
 ) => {
 	container.removeChild(child);
 };
+
+export const insertChildToContainer = (
+	child: Instance,
+	container: Container,
+	before: Instance
+) => {
+	container.insertBefore(child, before);
+};
