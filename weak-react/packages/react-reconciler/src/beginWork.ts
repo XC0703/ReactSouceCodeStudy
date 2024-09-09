@@ -5,7 +5,8 @@ import {
 	HostComponent,
 	HostRoot,
 	HostText,
-	FunctionComponent
+	FunctionComponent,
+	Fragment
 } from './workTags';
 import { reconcileChildFibers, mountChildFibers } from './childFiber';
 import { renderWithHooks } from './fiberHooks';
@@ -25,6 +26,9 @@ export const beginWork = (workInProgress: FiberNode) => {
 		// 表示文本节点
 		case HostText:
 			return updateHostText();
+		// 表示Fragment节点
+		case Fragment:
+			return updateFragment(workInProgress);
 		default:
 			if (__DEV__) {
 				console.warn('beginWork 未实现的类型', workInProgress.tag);
@@ -70,6 +74,12 @@ function updateFunctionComponent(workInProgress: FiberNode) {
 function updateHostText() {
 	// 没有子节点，直接返回 null
 	return null;
+}
+
+function updateFragment(workInProgress: FiberNode) {
+	const nextChildren = workInProgress.pendingProps;
+	reconcileChildren(workInProgress, nextChildren);
+	return workInProgress.child;
 }
 
 // 对比子节点的 current FiberNode 与 子节点的 ReactElement

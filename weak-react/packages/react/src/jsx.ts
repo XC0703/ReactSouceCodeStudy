@@ -7,6 +7,7 @@ import {
 	ReactElementType,
 	ElementType
 } from 'shared/ReactTypes';
+import { REACT_FRAGMENT_TYPE } from 'shared/ReactSymbols';
 
 const ReactElement = function (
 	type: Type,
@@ -82,3 +83,5 @@ export const jsxDEV = (type: ElementType, config: any) => {
 	}
 	return ReactElement(type, key, ref, props);
 };
+
+export const Fragment = REACT_FRAGMENT_TYPE;

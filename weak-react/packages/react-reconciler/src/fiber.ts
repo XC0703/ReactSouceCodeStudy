@@ -1,8 +1,12 @@
 import { Props, Key, Ref, ReactElementType } from 'shared/ReactTypes';
-import { FunctionComponent, HostComponent, WorkTag } from './workTags';
+import {
+	FunctionComponent,
+	HostComponent,
+	WorkTag,
+	Fragment
+} from './workTags';
 import { NoFlags, Flags } from './fiberFlags';
 import { Container } from 'hostConfig';
-import { Hook } from './fiberHooks';
 
 export class FiberNode {
 	tag: WorkTag;
@@ -108,5 +112,11 @@ export function createFiberFromElement(element: ReactElementType): FiberNode {
 
 	const fiber = new FiberNode(fiberTag, props, key);
 	fiber.type = type;
+	return fiber;
+}
+
+// 根据 Fragment 创建新的 Fiber 节点
+export function createFiberFromFragment(elements: any[], key: Key): FiberNode {
+	const fiber = new FiberNode(Fragment, elements, key);
 	return fiber;
 }
