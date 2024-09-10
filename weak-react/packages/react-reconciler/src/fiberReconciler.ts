@@ -9,6 +9,7 @@ import {
 } from './updateQueue';
 import { ReactElementType } from 'shared/ReactTypes';
 import { scheduleUpdateOnFiber } from './workLoop';
+import { requestUpdateLanes } from './fiberLanes';
 
 export function createContainer(container: Container) {
 	// 创建一个新的 `FiberNode` 对象，该对象表示根节点。
@@ -25,8 +26,9 @@ export function updateContainer(
 ) {
 	// 获取根节点的 current 属性，该属性表示当前正在渲染的 Fiber 节点
 	const hostRootFiber = root.current;
+	const lane = requestUpdateLanes();
 	// 创建一个 Update 对象，用于存储新的 React 元素
-	const update = createUpdate<ReactElementType | null>(element);
+	const update = createUpdate<ReactElementType | null>(element, lane);
 	// 将 Update 添加到 UpdateQueue 中
 	enqueueUpdate(
 		hostRootFiber.updateQueue as UpdateQueue<ReactElementType | null>,
