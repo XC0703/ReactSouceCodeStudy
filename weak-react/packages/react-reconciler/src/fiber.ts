@@ -8,6 +8,7 @@ import {
 import { NoFlags, Flags } from './fiberFlags';
 import { Container } from 'hostConfig';
 import { Lane, Lanes, NoLane, NoLanes } from './fiberLanes';
+import { Effect } from './fiberHooks';
 
 export class FiberNode {
 	tag: WorkTag;
@@ -61,6 +62,7 @@ export class FiberRootNode {
 	finishedWork: FiberNode | null;
 	pendingLanes: Lanes;
 	finishedLane: Lane;
+	pendingPassiveEffects: PendingPassiveEffects;
 	constructor(container: Container, hostRootFiber: FiberNode) {
 		this.container = container;
 		this.current = hostRootFiber;
@@ -71,7 +73,18 @@ export class FiberRootNode {
 		// 代表更新的优先级
 		this.pendingLanes = NoLanes;
 		this.finishedLane = NoLane;
+		// 用于记录副作用
+		this.pendingPassiveEffects = {
+			unmount: [],
+			update: []
+		};
 	}
+}
+
+// 副作用
+export interface PendingPassiveEffects {
+	unmount: Effect[];
+	update: Effect[];
 }
 
 // 根据 FiberRootNode.current 创建 workInProgress

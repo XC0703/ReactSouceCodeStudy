@@ -6,11 +6,12 @@ import {
 	insertChildToContainer,
 	removeChild
 } from 'hostConfig';
-import { FiberNode, FiberRootNode } from './fiber';
+import { FiberNode, FiberRootNode, PendingPassiveEffects } from './fiber';
 import {
 	ChildDeletion,
 	MutationMask,
 	NoFlags,
+	PassiveEffect,
 	Placement,
 	Update
 } from './fiberFlags';
@@ -20,12 +21,17 @@ import {
 	HostRoot,
 	HostText
 } from './workTags';
+import { Effect, FCUpdateQueue } from './fiberHooks';
+import { EffectTags, HookHasEffect } from './hookEffectTags';
 
 // 用于追踪当前需要处理的Fiber节点
 let nextEffect: FiberNode | null = null;
 
 // mutation 阶段，提交 HostComponent 的 side effect，也就是DOM节点的操作(增删改)
-export const commitMutationEffects = (finishedWork: FiberNode) => {
+export const commitMutationEffects = (
+	finishedWork: FiberNode,
+	root: FiberRootNode
+) => {
 	nextEffect = finishedWork;
 
 	// 深度优先遍历 Fiber 树，寻找更新 flags
@@ -43,7 +49,7 @@ export const commitMutationEffects = (finishedWork: FiberNode) => {
 			// 向上遍历
 			up: while (nextEffect !== null) {
 				// 处理 flags
-				commitMutationEffectsOnFiber(nextEffect);
+				commitMutationEffectsOnFiber(nextEffect, root);
 
 				const sibling: FiberNode | null = nextEffect.sibling;
 				// 遍历兄弟节点
@@ -59,23 +65,32 @@ export const commitMutationEffects = (finishedWork: FiberNode) => {
 };
 
 // 遍历 Fiber 树，处理 flags
-const commitMutationEffectsOnFiber = (finishedWork: FiberNode) => {
+const commitMutationEffectsOnFiber = (
+	finishedWork: FiberNode,
+	root: FiberRootNode
+) => {
 	const flags = finishedWork.flags;
 	if ((flags & Placement) !== NoFlags) {
 		commitPlacement(finishedWork);
+		// 处理完之后，从 flags 中删除 Placement 标记
 		finishedWork.flags &= ~Placement;
 	}
 	if ((flags & Update) !== NoFlags) {
 		const deletions = finishedWork.deletions;
 		if (deletions !== null) {
 			deletions.forEach((childToDelete) => {
-				commitDeletion(childToDelete);
+				commitDeletion(childToDelete, root);
 			});
 		}
 	}
 	if ((flags & ChildDeletion) !== NoFlags) {
 		commitUpdate(finishedWork);
 		finishedWork.flags &= ~ChildDeletion;
+	}
+	if ((flags & PassiveEffect) !== NoFlags) {
+		// 收集回调
+		commitPassiveEffect(finishedWork, root, 'update');
+		finishedWork.flags &= ~PassiveEffect;
 	}
 };
 
@@ -143,7 +158,7 @@ const appendPlacementNodeIntoContainer = (
 };
 
 // 删除节点及其子树
-const commitDeletion = (childToDelete: FiberNode) => {
+const commitDeletion = (childToDelete: FiberNode, root: FiberRootNode) => {
 	if (__DEV__) {
 		console.log('执行 Deletion 操作', childToDelete);
 	}
@@ -162,7 +177,7 @@ const commitDeletion = (childToDelete: FiberNode) => {
 				recordChildrenToDelete(rootChildrenToDelete, unmountFiber);
 				return;
 			case FunctionComponent:
-				//  TODO useEffect unmount
+				commitPassiveEffect(unmountFiber, root, 'unmount');
 				return;
 			default:
 				if (__DEV__) {
@@ -270,3 +285,81 @@ const recordChildrenToDelete = (
 		}
 	}
 };
+
+// 收集回调
+const commitPassiveEffect = (
+	fiber: FiberNode,
+	root: FiberRootNode,
+	type: keyof PendingPassiveEffects
+) => {
+	if (
+		fiber.tag !== FunctionComponent ||
+		(type === 'update' && (fiber.flags & PassiveEffect) === NoFlags)
+	) {
+		return;
+	}
+	const updateQueue = fiber.updateQueue as FCUpdateQueue<any>;
+	if (updateQueue !== null) {
+		if (updateQueue.lastEffect === null && __DEV__) {
+			console.error('commitPassiveEffect: updateQueue.lastEffect is null');
+		} else {
+			root.pendingPassiveEffects[type].push(updateQueue.lastEffect as Effect);
+		}
+	}
+};
+
+// 用于追踪当前需要处理的Fiber节点
+const commitHookEffectList = (
+	tags: EffectTags,
+	lastEffect: Effect,
+	callback: (effect: Effect) => void
+) => {
+	let effect = lastEffect.next as Effect;
+
+	do {
+		if ((effect.tag & tags) === tags) {
+			callback(effect);
+		}
+		effect = effect.next as Effect;
+	} while (effect !== lastEffect.next);
+};
+
+// 组件卸载时，触发所有 unmount destroy
+export function commitHookEffectListUnmount(
+	tags: EffectTags,
+	lastEffect: Effect
+) {
+	commitHookEffectList(tags, lastEffect, (effect) => {
+		const destroy = effect.destroy;
+		if (typeof destroy === 'function') {
+			destroy();
+		}
+		effect.tag &= ~HookHasEffect;
+	});
+}
+
+// 组件卸载时，触发所有上次更新的 destroy
+export function commitHookEffectListDestory(
+	tags: EffectTags,
+	lastEffect: Effect
+) {
+	commitHookEffectList(tags, lastEffect, (effect) => {
+		const destroy = effect.destroy;
+		if (typeof destroy === 'function') {
+			destroy();
+		}
+	});
+}
+
+// 组件卸载时，触发所有这次更新的 create
+export function commitHookEffectListCreate(
+	tags: EffectTags,
+	lastEffect: Effect
+) {
+	commitHookEffectList(tags, lastEffect, (effect) => {
+		const create = effect.create;
+		if (typeof create === 'function') {
+			effect.destroy = create();
+		}
+	});
+}
