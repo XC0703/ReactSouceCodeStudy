@@ -33,6 +33,9 @@ export const appendChildToContainer = (
 };
 
 export const commitUpdate = (fiber: FiberNode) => {
+	if (__DEV__) {
+		console.log('执行 Update 操作', fiber);
+	}
 	switch (fiber.tag) {
 		case HostComponent:
 			// 处理 props

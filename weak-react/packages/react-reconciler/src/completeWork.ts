@@ -1,5 +1,6 @@
 import {
 	Container,
+	Instance,
 	appendInitialChild,
 	createInstance,
 	createTextInstance
@@ -64,7 +65,10 @@ export const completeWork = (workInProgress: FiberNode) => {
 };
 
 // 递归处理子节点
-function appendAllChildren(parent: Container, workInProgress: FiberNode) {
+function appendAllChildren(
+	parent: Container | Instance,
+	workInProgress: FiberNode
+) {
 	let node = workInProgress.child;
 	while (node !== null) {
 		if (node.tag === HostComponent || node.tag === HostText) {

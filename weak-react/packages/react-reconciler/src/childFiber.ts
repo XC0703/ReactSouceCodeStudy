@@ -338,6 +338,11 @@ function ChildReconciler(shouldTrackSideEffects: boolean) {
 			);
 		}
 
+		// default 情况，删除旧的 Fiber 节点
+		if (currentFiber !== null) {
+			deleteRemainingChildren(returnFiber, currentFiber);
+		}
+
 		if (__DEV__) {
 			console.warn('未实现的 reconcile 类型', newChild);
 		}

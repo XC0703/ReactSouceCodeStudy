@@ -35,6 +35,6 @@ export function updateContainer(
 		update
 	);
 	// 协调更新
-	scheduleUpdateOnFiber(hostRootFiber);
+	scheduleUpdateOnFiber(hostRootFiber, lane);
 	return element;
 }

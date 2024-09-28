@@ -73,6 +73,7 @@ export function renderWithHooks(workInProgress: FiberNode, lane: Lane) {
 	// 重置全局变量
 	currentlyRenderingFiber = null;
 	workInProgressHook = null;
+	currentHook = null;
 	renderLane = NoLane;
 
 	return children;

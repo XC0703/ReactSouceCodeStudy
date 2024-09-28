@@ -12,6 +12,7 @@ import {
 	MutationMask,
 	NoFlags,
 	PassiveEffect,
+	PassiveMask,
 	Placement,
 	Update
 } from './fiberFlags';
@@ -39,7 +40,7 @@ export const commitMutationEffects = (
 		// 向下遍历
 		const child: FiberNode | null = nextEffect.child;
 		if (
-			(nextEffect.subtreeFlags & MutationMask) !== NoFlags &&
+			(nextEffect.subtreeFlags & (MutationMask | PassiveMask)) !== NoFlags &&
 			child !== null
 		) {
 			// 子节点存在 mutation 阶段需要执行的 flags
@@ -75,17 +76,18 @@ const commitMutationEffectsOnFiber = (
 		// 处理完之后，从 flags 中删除 Placement 标记
 		finishedWork.flags &= ~Placement;
 	}
-	if ((flags & Update) !== NoFlags) {
+	if ((flags & ChildDeletion) !== NoFlags) {
 		const deletions = finishedWork.deletions;
 		if (deletions !== null) {
 			deletions.forEach((childToDelete) => {
 				commitDeletion(childToDelete, root);
 			});
 		}
-	}
-	if ((flags & ChildDeletion) !== NoFlags) {
-		commitUpdate(finishedWork);
 		finishedWork.flags &= ~ChildDeletion;
+	}
+	if ((flags & Update) !== NoFlags) {
+		commitUpdate(finishedWork);
+		finishedWork.flags &= ~Update;
 	}
 	if ((flags & PassiveEffect) !== NoFlags) {
 		// 收集回调
@@ -100,7 +102,7 @@ const commitPlacement = (finishedWork: FiberNode) => {
 		console.log('执行 Placement 操作', finishedWork);
 	}
 	// parent DOM
-	const hostParent = getHostParent(finishedWork);
+	const hostParent = getHostParent(finishedWork) as Container;
 	// Host sibling
 	const sibling = getHostSibling(finishedWork);
 	if (hostParent !== null) {
@@ -128,6 +130,45 @@ const getHostParent = (fiber: FiberNode): Container | null => {
 		console.warn('未找到 host parent', fiber);
 	}
 	return null;
+};
+
+// 获取兄弟 Host 节点
+const getHostSibling = (fiber: FiberNode) => {
+	let node: FiberNode = fiber;
+	findSibling: while (true) {
+		// 没有兄弟节点时，向上遍历
+		while (node.sibling === null) {
+			const parent = node.return;
+			if (
+				parent === null ||
+				parent.tag === HostComponent ||
+				parent.tag === HostRoot
+			) {
+				return null;
+			}
+			node = parent;
+		}
+
+		// 向下遍历
+		node.sibling.return = node.return;
+		node = node.sibling;
+		while (node.tag !== HostText && node.tag !== HostComponent) {
+			// 不稳定的 Host 节点不能作为目标兄弟 Host 节点
+			if ((node.flags & Placement) !== NoFlags) {
+				continue findSibling;
+			}
+			if (node.child === null) {
+				continue findSibling;
+			} else {
+				node.child.return = node;
+				node = node.child;
+			}
+		}
+
+		if ((node.flags & Placement) === NoFlags) {
+			return node.stateNode;
+		}
+	}
 };
 
 // 遍历子节点，将子节点的 DOM 插入到 parent DOM 中（递归插入）
@@ -225,45 +266,6 @@ const commitNestedUnmounts = (
 		}
 		node.sibling.return = node.return;
 		node = node.sibling;
-	}
-};
-
-// 获取兄弟 Host 节点
-const getHostSibling = (fiber: FiberNode) => {
-	let node: FiberNode = fiber;
-	findSibling: while (true) {
-		// 没有兄弟节点时，向上遍历
-		while (node.sibling === null) {
-			const parent = node.return;
-			if (
-				parent === null ||
-				parent.tag === HostComponent ||
-				parent.tag === HostRoot
-			) {
-				return null;
-			}
-			node = parent;
-		}
-
-		// 向下遍历
-		node.sibling.return = node.return;
-		node = node.sibling;
-		while (node.tag !== HostText && node.tag !== HostComponent) {
-			// 不稳定的 Host 节点不能作为目标兄弟 Host 节点
-			if ((node.flags & Placement) !== NoFlags) {
-				continue findSibling;
-			}
-			if (node.child === null) {
-				continue findSibling;
-			} else {
-				node.child.return = node;
-				node = node.child;
-			}
-		}
-
-		if ((node.flags & Placement) === NoFlags) {
-			return node.stateNode;
-		}
 	}
 };
 
