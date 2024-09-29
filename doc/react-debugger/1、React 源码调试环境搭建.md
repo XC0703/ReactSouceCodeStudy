@@ -172,7 +172,7 @@ createRoot();
 
 ### 1-3-3 其它报错解决
 
-**问题一：**![debugger1.6.png](/md_images/react-debugger/debugger1.6.png)
+**问题一：**![debugger1.7.png](/md_images/react-debugger/debugger1.7.png)
 来到`react-debugger\src\react\packages\react-reconciler\src\ReactFiberHostConfig.js`文件，作出如下修改：
 
 ```js
